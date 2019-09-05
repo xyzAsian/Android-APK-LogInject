@@ -13,8 +13,8 @@ linux + python2.7
 **python inject.py xx.apk**
 
 会在 workspace/out 目录下生成 :<br/>
-target_*.apk            未签名apk<br/>
-target_*.signed.apk     debug签名apk
+target_xx.apk ----------- 未签名apk<br/>
+target_xx.signed.apk ---- debug签名apk
 
 ## 感谢
 [log4a](https://github.com/pqpo/Log4a)
