@@ -12,8 +12,8 @@ linux + python2.7
 ## 使用方法:
 **python inject.py xx.apk**
 
-会在 workspace/out 目录下生成 :
-target_*.apk            未签名apk
+会在 workspace/out 目录下生成 :<br/>
+target_*.apk            未签名apk<br/>
 target_*.signed.apk     debug签名apk
 
 ## 感谢
