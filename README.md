@@ -10,7 +10,7 @@ Auto inject log to smali, at method begin and end
 linux + python2.7
 
 ## 使用方法:
-**python inject.py xx.apk**
+**python inject.py xx.apk config.conf**
 
 会在 workspace/out 目录下生成 :<br/>
 target_xx.apk ----------- 未签名apk<br/>
@@ -24,7 +24,7 @@ target_xx.signed.apk ---- debug签名apk<br/>
   "com/example" 表示只对 com.example 开头的类打桩<br/>
   "!com/example/fileprovider/MyApplication" 表示不对 com.example.fileprovider.MyApplication 类打桩<br/>
 ### log
-print: log打印开关
+print: log打印开关<br/>
 file: log输出文件开关
 
 ## 感谢
