@@ -5,6 +5,7 @@ import os, sys
 import commands
 import msgpack
 import hashlib
+import json
 
 BASIC = ('Z','B','S','C','I','J','F','D')
 BASIC_NO_JD = ('Z','B','S','C','I','F')
@@ -48,7 +49,7 @@ class Packer(object):
         self.inApk = inApk
         self.workspace = workspace
         self.config = config
-        execute_cmd('mkdir -p %s'%(self.workspace))
+        execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
         self.parse_axml()
         self.initConfig(self.config)
         self.METHOD_IN = '''
@@ -90,10 +91,11 @@ class Packer(object):
         if config['data_statistics']['func_filter']:
             for item in config['data_statistics']['func_filter']:
                 if item.startswith('!'):
-                    config['data_statistics']['filter'].append(item)
+                    config['data_statistics']['filter'].append(item[1:])
                 else :
                     config['data_statistics']['func'].append(item)
                 pass
+        print json.dumps(config,indent=4,sort_keys=True)
 
     def doUnzip(self) :
         self.outApk = 'target_{0}'.format(self.inApk)
@@ -101,6 +103,14 @@ class Packer(object):
         execute_cmd('mkdir -p {2}; cp -f {0}/{1} {2}/{3}'.format(self.currentDir, self.inApk, self.outDir,self.outApk))
         self.dexDir = "{0}/dex".format(self.workspace)
         execute_cmd('mkdir -p {1}; unzip {0} classes*.dex -d {1}'.format(self.inApk, self.dexDir))
+
+    def doLogSetting(self,smali_file_dir):
+        if not self.config.get('log',None):
+            self.config.setdefault('log',{'print':False,'file':True})
+        if self.config['log'].get('print',False):
+            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i '0,/LOGPRINT/s/LOGPRINT/{1}/g'".format(smali_file_dir,"LOGPRINT_TRUE"))
+        if self.config['log'].get('file',False):
+            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i '0,/LOGFILE/s/LOGFILE/{1}/g'".format(smali_file_dir,"LOGFILE_TRUE"))
 
     def doInject(self) :
         dexess = [os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')]
@@ -137,6 +147,7 @@ class Packer(object):
         filess.sort(cmp=lambda x,y:compare(x,y),reverse=True)
         execute_cmd('rm -f %s'%(filess[0]))
         execute_cmd('cp -rf %s/../bangcle/log/ %s/%s/bangcle/'%(self.toolsDir, self.dexDir, filess[0][:-4]))
+        self.doLogSetting("%s/%s"%(self.dexDir, filess[0][:-4]))
         self.smaliToDex(self.dexDir+'/'+filess[0][:-4], self.outDir+'/'+filess[0])
 
     def doZip(self):
@@ -182,7 +193,7 @@ class Packer(object):
         else:
             return execute_cmd('java -jar %s/baksmali-2.2.7.jar d %s %s -o %s' % (self.toolsDir, uselocals, index_path, outdir),log,allow_fail)
 
-    def move_smali(self,srcDexFile,desDexDir,method_len = 37500):
+    def move_smali(self,srcDexFile,desDexDir,method_len = 45000):
         #execute_cmd('mkdir -p %s'%(srcDexFile[:-4]))
         if not os.path.exists(desDexDir):
             execute_cmd("mkdir %s"%(desDexDir),allow_fail=True)
@@ -371,7 +382,6 @@ class Packer(object):
                 self.manifest['android:name'] = '"' + '.'.join(self.pkgName.split('.') + tk) + '"'
 
     def startInject(self):
-        execute_cmd('rm -rf %s'%(self.workspace))
         self.doUnzip()
         self.doInject()
         self.doAddLog4a()
@@ -386,6 +396,6 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3 :
         execfile(sys.argv[2])
     else :
-        config = {'data_statistics':{'func_filter':[]}}
+        config = {'data_statistics':{'func_filter':[]},'log':{'print':False,'file':True}}
     Packer(currentDir, toolsDir, inApk, workspace, config).startInject()
     pass

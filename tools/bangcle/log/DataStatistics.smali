@@ -4,6 +4,10 @@
 
 
 # static fields
+.field public static LOG_FILE:Ljava/lang/String;
+
+.field public static LOG_PRINT:Ljava/lang/String;
+
 .field private static dataCache:Lbangcle/log/DataCache;
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -17,6 +21,23 @@
 
 
 # direct methods
+.method static constructor <clinit>()V
+    .registers 1
+
+    .prologue
+    .line 10
+    const-string v0, "LOGPRINT"
+
+    sput-object v0, Lbangcle/log/DataStatistics;->LOG_PRINT:Ljava/lang/String;
+
+    .line 11
+    const-string v0, "LOGFILE"
+
+    sput-object v0, Lbangcle/log/DataStatistics;->LOG_FILE:Ljava/lang/String;
+
+    return-void
+.end method
+
 .method public constructor <init>()V
     .registers 1
 
@@ -42,14 +63,14 @@
     .param p0, "application"    # Landroid/app/Application;
 
     .prologue
-    .line 38
+    .line 41
     new-instance v0, Lbangcle/log/DataStatistics$1;
 
     invoke-direct {v0}, Lbangcle/log/DataStatistics$1;-><init>()V
 
     invoke-virtual {p0, v0}, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V
 
-    .line 76
+    .line 79
     return-void
 .end method
 
@@ -58,19 +79,19 @@
     .param p0, "context"    # Landroid/content/Context;
 
     .prologue
-    .line 13
+    .line 16
     new-instance v0, Lbangcle/log/DataCache;
 
     invoke-direct {v0}, Lbangcle/log/DataCache;-><init>()V
 
     sput-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
-    .line 14
+    .line 17
     sget-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
     invoke-virtual {v0, p0}, Lbangcle/log/DataCache;->init(Landroid/content/Context;)V
 
-    .line 15
+    .line 18
     return-void
 .end method
 
@@ -80,12 +101,12 @@
     .param p1, "methodName"    # Ljava/lang/String;
 
     .prologue
-    .line 21
+    .line 24
     sget-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
     if-eqz v0, :cond_34
 
-    .line 22
+    .line 25
     sget-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
     new-instance v1, Ljava/lang/StringBuilder;
@@ -132,7 +153,7 @@
 
     invoke-virtual {v0, v1}, Lbangcle/log/DataCache;->offer(Ljava/lang/Object;)V
 
-    .line 25
+    .line 28
     :cond_34
     return-void
 .end method
@@ -143,12 +164,12 @@
     .param p1, "methodName"    # Ljava/lang/String;
 
     .prologue
-    .line 31
+    .line 34
     sget-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
     if-eqz v0, :cond_34
 
-    .line 32
+    .line 35
     sget-object v0, Lbangcle/log/DataStatistics;->dataCache:Lbangcle/log/DataCache;
 
     new-instance v1, Ljava/lang/StringBuilder;
@@ -195,7 +216,7 @@
 
     invoke-virtual {v0, v1}, Lbangcle/log/DataCache;->offer(Ljava/lang/Object;)V
 
-    .line 35
+    .line 38
     :cond_34
     return-void
 .end method

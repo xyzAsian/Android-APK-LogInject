@@ -22,7 +22,7 @@
     .registers 1
 
     .prologue
-    .line 38
+    .line 41
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -36,7 +36,7 @@
     .param p2, "bundle"    # Landroid/os/Bundle;
 
     .prologue
-    .line 42
+    .line 45
     return-void
 .end method
 
@@ -45,21 +45,21 @@
     .param p1, "activity"    # Landroid/app/Activity;
 
     .prologue
-    .line 71
+    .line 74
     invoke-static {}, Lbangcle/log/DataStatistics;->access$000()Lbangcle/log/DataCache;
 
     move-result-object v0
 
     if-eqz v0, :cond_d
 
-    .line 72
+    .line 75
     invoke-static {}, Lbangcle/log/DataStatistics;->access$000()Lbangcle/log/DataCache;
 
     move-result-object v0
 
     invoke-virtual {v0}, Lbangcle/log/DataCache;->destory()V
 
-    .line 74
+    .line 77
     :cond_d
     return-void
 .end method
@@ -69,7 +69,7 @@
     .param p1, "activity"    # Landroid/app/Activity;
 
     .prologue
-    .line 57
+    .line 60
     return-void
 .end method
 
@@ -78,7 +78,7 @@
     .param p1, "activity"    # Landroid/app/Activity;
 
     .prologue
-    .line 52
+    .line 55
     return-void
 .end method
 
@@ -88,7 +88,7 @@
     .param p2, "bundle"    # Landroid/os/Bundle;
 
     .prologue
-    .line 67
+    .line 70
     return-void
 .end method
 
@@ -97,7 +97,7 @@
     .param p1, "activity"    # Landroid/app/Activity;
 
     .prologue
-    .line 47
+    .line 50
     return-void
 .end method
 
@@ -106,6 +106,6 @@
     .param p1, "activity"    # Landroid/app/Activity;
 
     .prologue
-    .line 62
+    .line 65
     return-void
 .end method

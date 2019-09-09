@@ -37,7 +37,7 @@
     .param p1, "context"    # Landroid/content/Context;
 
     .prologue
-    .line 68
+    .line 71
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     const-string v1, "DataStatistics"
 
@@ -45,11 +45,11 @@
 
     move-result-object v0
 
-    .line 69
+    .line 72
     .local v0, "log":Ljava/io/File;
     if-nez v0, :cond_13
 
-    .line 70
+    .line 73
     new-instance v0, Ljava/io/File;
 
     .end local v0    # "log":Ljava/io/File;
@@ -61,7 +61,7 @@
 
     invoke-direct {v0, v1, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
 
-    .line 72
+    .line 75
     .restart local v0    # "log":Ljava/io/File;
     :cond_13
     invoke-virtual {v0}, Ljava/io/File;->exists()Z
@@ -70,12 +70,40 @@
 
     if-nez v1, :cond_1c
 
-    .line 73
+    .line 76
     invoke-virtual {v0}, Ljava/io/File;->mkdir()Z
 
-    .line 75
+    .line 78
     :cond_1c
     return-object v0
+.end method
+
+.method private swich(Ljava/lang/String;)Z
+    .registers 3
+    .param p1, "_swich"    # Ljava/lang/String;
+
+    .prologue
+    .line 90
+    .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
+    if-eqz p1, :cond_c
+
+    const-string v0, "TRUE"
+
+    invoke-virtual {p1, v0}, Ljava/lang/String;->endsWith(Ljava/lang/String;)Z
+
+    move-result v0
+
+    if-eqz v0, :cond_c
+
+    const/4 v0, 0x1
+
+    :goto_b
+    return v0
+
+    :cond_c
+    const/4 v0, 0x0
+
+    goto :goto_b
 .end method
 
 
@@ -84,16 +112,16 @@
     .registers 1
 
     .prologue
-    .line 83
+    .line 86
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     invoke-static {}, Lme/pqpo/librarylog4a/Log4a;->flush()V
 
-    .line 84
+    .line 87
     return-void
 .end method
 
 .method public init(Landroid/content/Context;)V
-    .registers 14
+    .registers 15
     .param p1, "context"    # Landroid/content/Context;
 
     .prologue
@@ -103,28 +131,28 @@
 
     .line 33
     .local v3, "level":I
-    new-instance v8, Lbangcle/log/DataCache$1;
+    new-instance v9, Lbangcle/log/DataCache$1;
 
-    invoke-direct {v8, p0}, Lbangcle/log/DataCache$1;-><init>(Lbangcle/log/DataCache;)V
+    invoke-direct {v9, p0}, Lbangcle/log/DataCache$1;-><init>(Lbangcle/log/DataCache;)V
 
     .line 40
-    .local v8, "wrapInterceptor":Lme/pqpo/librarylog4a/interceptor/Interceptor;
-    new-instance v9, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
+    .local v9, "wrapInterceptor":Lme/pqpo/librarylog4a/interceptor/Interceptor;
+    new-instance v10, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
-    invoke-direct {v9}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;-><init>()V
+    invoke-direct {v10}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;-><init>()V
 
     .line 41
-    invoke-virtual {v9, v3}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
+    invoke-virtual {v10, v3}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 42
-    invoke-virtual {v9, v8}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
+    invoke-virtual {v10, v9}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 43
-    invoke-virtual {v9}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/AndroidAppender;
+    invoke-virtual {v10}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/AndroidAppender;
 
     move-result-object v0
 
@@ -136,163 +164,185 @@
 
     .line 46
     .local v4, "log":Ljava/io/File;
-    new-instance v9, Ljava/lang/StringBuilder;
+    new-instance v10, Ljava/lang/StringBuilder;
 
-    invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-direct {v10}, Ljava/lang/StringBuilder;-><init>()V
 
     invoke-virtual {v4}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
+    move-result-object v11
+
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
     move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget-object v11, Ljava/io/File;->separator:Ljava/lang/String;
 
-    move-result-object v9
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    sget-object v10, Ljava/io/File;->separator:Ljava/lang/String;
+    move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v11, "log.logCache"
 
-    move-result-object v9
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v10, "log.logCache"
+    move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    invoke-virtual {v10}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v1
 
     .line 47
     .local v1, "buffer_path":Ljava/lang/String;
-    new-instance v9, Ljava/text/SimpleDateFormat;
+    new-instance v10, Ljava/text/SimpleDateFormat;
 
-    const-string v10, "yyyy_MM_dd_HH_mm"
+    const-string v11, "yyyy_MM_dd_HH_mm"
 
     invoke-static {}, Ljava/util/Locale;->getDefault()Ljava/util/Locale;
 
-    move-result-object v11
+    move-result-object v12
 
-    invoke-direct {v9, v10, v11}, Ljava/text/SimpleDateFormat;-><init>(Ljava/lang/String;Ljava/util/Locale;)V
+    invoke-direct {v10, v11, v12}, Ljava/text/SimpleDateFormat;-><init>(Ljava/lang/String;Ljava/util/Locale;)V
 
-    new-instance v10, Ljava/util/Date;
+    new-instance v11, Ljava/util/Date;
 
-    invoke-direct {v10}, Ljava/util/Date;-><init>()V
+    invoke-direct {v11}, Ljava/util/Date;-><init>()V
 
-    invoke-virtual {v9, v10}, Ljava/text/SimpleDateFormat;->format(Ljava/util/Date;)Ljava/lang/String;
+    invoke-virtual {v10, v11}, Ljava/text/SimpleDateFormat;->format(Ljava/util/Date;)Ljava/lang/String;
 
-    move-result-object v7
+    move-result-object v8
 
     .line 48
-    .local v7, "time":Ljava/lang/String;
-    new-instance v9, Ljava/lang/StringBuilder;
+    .local v8, "time":Ljava/lang/String;
+    new-instance v10, Ljava/lang/StringBuilder;
 
-    invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-direct {v10}, Ljava/lang/StringBuilder;-><init>()V
 
     invoke-virtual {v4}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
+    move-result-object v11
+
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
     move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget-object v11, Ljava/io/File;->separator:Ljava/lang/String;
 
-    move-result-object v9
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    sget-object v10, Ljava/io/File;->separator:Ljava/lang/String;
+    move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v10, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    move-result-object v9
+    move-result-object v10
 
-    invoke-virtual {v9, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v11, ".txt"
 
-    move-result-object v9
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v10, ".txt"
+    move-result-object v10
 
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    invoke-virtual {v10}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v5
 
     .line 49
     .local v5, "log_path":Ljava/lang/String;
-    new-instance v9, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    new-instance v10, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    invoke-direct {v9, p1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;-><init>(Landroid/content/Context;)V
+    invoke-direct {v10, p1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;-><init>(Landroid/content/Context;)V
 
     .line 50
-    invoke-virtual {v9, v5}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLogFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v5}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLogFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 51
-    invoke-virtual {v9, v3}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v3}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 52
-    invoke-virtual {v9, v8}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v9}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 53
-    invoke-virtual {v9, v1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
-    new-instance v10, Lme/pqpo/librarylog4a/formatter/DateFileFormatter;
+    new-instance v11, Lme/pqpo/librarylog4a/formatter/DateFileFormatter;
 
-    invoke-direct {v10}, Lme/pqpo/librarylog4a/formatter/DateFileFormatter;-><init>()V
+    invoke-direct {v11}, Lme/pqpo/librarylog4a/formatter/DateFileFormatter;-><init>()V
 
     .line 54
-    invoke-virtual {v9, v10}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setFormatter(Lme/pqpo/librarylog4a/formatter/Formatter;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setFormatter(Lme/pqpo/librarylog4a/formatter/Formatter;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
-    const/4 v10, 0x0
+    const/4 v11, 0x0
 
     .line 55
-    invoke-virtual {v9, v10}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setCompress(Z)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setCompress(Z)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
-    const v10, 0x7d000
+    const v11, 0x7d000
 
     .line 56
-    invoke-virtual {v9, v10}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferSize(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
+    invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferSize(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
-    move-result-object v9
+    move-result-object v10
 
     .line 57
-    invoke-virtual {v9}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/FileAppender;
+    invoke-virtual {v10}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/FileAppender;
 
     move-result-object v2
 
     .line 59
     .local v2, "fileAppender":Lme/pqpo/librarylog4a/appender/FileAppender;
-    new-instance v9, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
+    new-instance v7, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
 
-    invoke-direct {v9}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;-><init>()V
+    invoke-direct {v7}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;-><init>()V
+
+    .line 60
+    .local v7, "loggerBuild":Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
+    sget-object v10, Lbangcle/log/DataStatistics;->LOG_PRINT:Ljava/lang/String;
+
+    invoke-direct {p0, v10}, Lbangcle/log/DataCache;->swich(Ljava/lang/String;)Z
+
+    move-result v10
+
+    if-eqz v10, :cond_ab
 
     .line 61
-    invoke-virtual {v9, v2}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->addAppender(Lme/pqpo/librarylog4a/appender/Appender;)Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
+    invoke-virtual {v7, v0}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->addAppender(Lme/pqpo/librarylog4a/appender/Appender;)Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
 
-    move-result-object v9
+    .line 63
+    :cond_ab
+    sget-object v10, Lbangcle/log/DataStatistics;->LOG_FILE:Ljava/lang/String;
 
-    .line 62
-    invoke-virtual {v9}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->create()Lme/pqpo/librarylog4a/logger/AppenderLogger;
+    invoke-direct {p0, v10}, Lbangcle/log/DataCache;->swich(Ljava/lang/String;)Z
+
+    move-result v10
+
+    if-eqz v10, :cond_b6
+
+    .line 64
+    invoke-virtual {v7, v2}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->addAppender(Lme/pqpo/librarylog4a/appender/Appender;)Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
+
+    .line 66
+    :cond_b6
+    invoke-virtual {v7}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->create()Lme/pqpo/librarylog4a/logger/AppenderLogger;
 
     move-result-object v6
 
-    .line 63
+    .line 67
     .local v6, "logger":Lme/pqpo/librarylog4a/logger/AppenderLogger;
     invoke-static {v6}, Lme/pqpo/librarylog4a/Log4a;->setLogger(Lme/pqpo/librarylog4a/logger/Logger;)V
 
-    .line 65
+    .line 68
     return-void
 .end method
 
@@ -305,7 +355,7 @@
     .end annotation
 
     .prologue
-    .line 79
+    .line 82
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     .local p1, "t":Ljava/lang/Object;, "TT;"
     const-string v0, ""
@@ -316,6 +366,6 @@
 
     invoke-static {v0, v1}, Lme/pqpo/librarylog4a/Log4a;->w(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 80
+    .line 83
     return-void
 .end method
