@@ -1,7 +1,10 @@
 # Android-APK-LogInject
 Auto inject log to smali, at method begin and end
 
-此工具可以自动插入log，在每个Java方法的开始和结束。
+此工具可以自动插入log，在每个Java方法的开始和结束。<br/>
+例如<br/>
+2019:09:16 19:28:29 WBangcle 1568633309652  Lcom/gotokeep/keep/KApplication;   getContext()Landroid/content/Context; start
+2019:09:16 19:28:29 WBangcle 1568633309652  Lcom/gotokeep/keep/KApplication;   getContext()Landroid/content/Context; end
 
 ## Log格式：
 [时间戳] [类] [方法] [start/end]
