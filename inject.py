@@ -141,7 +141,7 @@ class Packer(object):
                 a,b = self.smaliToDex(dexFileFullDir,self.outDir+dexFileFullPath.replace(self.dexDir,''),allow_fail = True)
                 #a,b = execute_cmd('java -jar {0}/smali-2.2.7.jar a {1}/ -o {2}/{3}'.format(self.toolsDir, _classDir, self.outDir, _classDir.replace(self.dexDir,'')[1:]+'.dex'),allow_fail=True)
                 if a != 0:
-                    self.move_smali(dexFileFullPath,'%s/%s'%(self.dexDir,'classes%d'%(len([os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')])+1)))
+                    self.move_smali(dexFileFullPath,(len([os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')])+1))
         #self.re_arrange_dex('%s/%s'%(self.dexDir,'classes%d'%(len(dexess)+1)))
         filess = os.listdir(self.outDir)
         filess.sort(cmp=lambda x,y:compare(x,y),reverse=True)
@@ -178,7 +178,8 @@ class Packer(object):
         return False
 
     def methodIdCount(self,dexpath):
-        return int(execute_cmd("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $13$12$11$10}'"%dexpath, log=False),16)
+        a,b = execute_cmd("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $13$12$11$10}'"%dexpath, log=False)
+        return int(b,16)
 
     def smaliToDex(self, smalidir, outdex_path, minSdk=9, delsmali=False, log=True, allow_fail=False):
         if delsmali:
@@ -193,13 +194,19 @@ class Packer(object):
         else:
             return execute_cmd('java -jar %s/baksmali-2.2.7.jar d %s %s -o %s' % (self.toolsDir, uselocals, index_path, outdir),log,allow_fail)
 
-    def move_smali(self,srcDexFile,desDexDir,method_len = 45000):
+    def move_smali(self,srcDexFile,desDexDirIndex,split_size = 3):
+        print "开始移动 classes"+str(desDexDirIndex)+".dex"
         #execute_cmd('mkdir -p %s'%(srcDexFile[:-4]))
-        if not os.path.exists(desDexDir):
-            execute_cmd("mkdir %s"%(desDexDir),allow_fail=True)
-        execute_cmd('java -jar {0}/dex_split-1.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDir,method_len))
+        desDexDirFirst = "%s/classes%d"%(self.dexDir,desDexDirIndex)
+        #if not os.path.exists(""%(desDexDir)):
+            #execute_cmd("mkdir %s"%(desDexDir),allow_fail=True)
+        execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
         self.smaliToDex(srcDexFile[:-4], self.outDir + srcDexFile.replace(self.dexDir,''))
-        self.smaliToDex(desDexDir, desDexDir+'.dex')
+        for x in xrange(0,split_size -1):
+            desDexDir = "%s/classes%d"%(self.dexDir, desDexDirIndex + x)
+            self.smaliToDex(desDexDir, desDexDir+'.dex')
+            execute_cmd("cp -f %s.dex %s/classes%d.dex"%(desDexDir, self.outDir,desDexDirIndex + x))
+            pass
         execute_cmd('cp -f %s %s'%(desDexDir+'.dex', self.outDir))
 
     def inject(self,absfilepath, fileDir):
