@@ -132,23 +132,40 @@ class Packer(object):
                 if dexFileFullPath.endswith('classes.dex') :
                     if not os.path.exists("%s/bangcle/"%dexFileFullDir):
                         execute_cmd("mkdir -p %s/bangcle/"%dexFileFullDir)
-                    execute_cmd('cp -rf %s/../bangcle/app/ %s/bangcle/'%(self.toolsDir, dexFileFullDir))
-                    if self.manifest.get('android:name',None):
-                        newSuperClass = self.manifest.get('android:name',None).replace('.','/')
-                        execute_cmd(("sed -i 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
-                        execute_cmd(("sed -i 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
-
+                    execute_cmd('cp -rf %s/../bangcle/ %s/'%(self.toolsDir, dexFileFullDir))
+                    #execute_cmd('cp -rf %s/../bangcle/log/ %s/bangcle/'%(self.toolsDir, dexFileFullDir))
+                    self.doLogSetting(dexFileFullDir)
+                    newSuperClass = self.manifest.get('android:name',None)
+                    if newSuperClass:
+                        execute_cmd("sed -i 's/REAL_APP/%s/g' %s/bangcle/app/BangcleLogApplication.smali"%(newSuperClass[1:-1], dexFileFullDir))
+                '''
+                如果smali转dex失败，则move_smali
+                '''
                 a,b = self.smaliToDex(dexFileFullDir,self.outDir+dexFileFullPath.replace(self.dexDir,''),allow_fail = True)
-                #a,b = execute_cmd('java -jar {0}/smali-2.2.7.jar a {1}/ -o {2}/{3}'.format(self.toolsDir, _classDir, self.outDir, _classDir.replace(self.dexDir,'')[1:]+'.dex'),allow_fail=True)
                 if a != 0:
                     self.move_smali(dexFileFullPath,(len([os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')])+1))
         #self.re_arrange_dex('%s/%s'%(self.dexDir,'classes%d'%(len(dexess)+1)))
         filess = os.listdir(self.outDir)
         filess.sort(cmp=lambda x,y:compare(x,y),reverse=True)
         execute_cmd('rm -f %s'%(filess[0]))
-        execute_cmd('cp -rf %s/../bangcle/log/ %s/%s/bangcle/'%(self.toolsDir, self.dexDir, filess[0][:-4]))
-        self.doLogSetting("%s/%s"%(self.dexDir, filess[0][:-4]))
         self.smaliToDex(self.dexDir+'/'+filess[0][:-4], self.outDir+'/'+filess[0])
+
+    def filterSuperApplication(self, childApplication):
+        if childApplication:
+            if childApplication.startswith("Landroid/") or childApplication.startswith("Ljava/lang/Object"):
+                return
+            with open("%s/temp/application_filter.txt"%self.workspace,"a+") as filterFile:
+                filterFile.write(childApplication)
+                filterFile.write("\n")
+                filterFile.close()
+
+            with open("%s/classes/%s.smali"%(self.dexDir,childApplication[1:-1]),"r+") as file :
+                for line in file:
+                    if line.startswith(".super"):
+                        superApplication = line[line.rfind(' ')+1:].strip()
+                        self.filterSuperApplication(superApplication)
+                    pass
+
 
     def doZip(self):
         execute_cmd('cd {0}/out;zip -r target_{1} classes*.dex;cd -'.format(self.workspace,self.inApk))
@@ -195,12 +212,13 @@ class Packer(object):
             return execute_cmd('java -jar %s/baksmali-2.2.7.jar d %s %s -o %s' % (self.toolsDir, uselocals, index_path, outdir),log,allow_fail)
 
     def move_smali(self,srcDexFile,desDexDirIndex,split_size = 3):
-        print "开始移动 classes"+str(desDexDirIndex)+".dex"
+        print "开始移动 "+srcDexFile
         #execute_cmd('mkdir -p %s'%(srcDexFile[:-4]))
         desDexDirFirst = "%s/classes%d"%(self.dexDir,desDexDirIndex)
-        #if not os.path.exists(""%(desDexDir)):
-            #execute_cmd("mkdir %s"%(desDexDir),allow_fail=True)
-        execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
+        if srcDexFile.endswith("classes.dex"):
+            execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3} -f {4}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size, "Landroid/support/multidex"), log = True)
+        else :
+            execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
         self.smaliToDex(srcDexFile[:-4], self.outDir + srcDexFile.replace(self.dexDir,''))
         for x in xrange(0,split_size -1):
             desDexDir = "%s/classes%d"%(self.dexDir, desDexDirIndex + x)
