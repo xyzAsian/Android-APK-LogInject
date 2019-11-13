@@ -37,7 +37,7 @@
     .param p1, "context"    # Landroid/content/Context;
 
     .prologue
-    .line 71
+    .line 65
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     const-string v1, "DataStatistics"
 
@@ -45,11 +45,11 @@
 
     move-result-object v0
 
-    .line 72
+    .line 66
     .local v0, "log":Ljava/io/File;
     if-nez v0, :cond_13
 
-    .line 73
+    .line 67
     new-instance v0, Ljava/io/File;
 
     .end local v0    # "log":Ljava/io/File;
@@ -61,7 +61,7 @@
 
     invoke-direct {v0, v1, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
 
-    .line 75
+    .line 69
     .restart local v0    # "log":Ljava/io/File;
     :cond_13
     invoke-virtual {v0}, Ljava/io/File;->exists()Z
@@ -70,10 +70,10 @@
 
     if-nez v1, :cond_1c
 
-    .line 76
+    .line 70
     invoke-virtual {v0}, Ljava/io/File;->mkdir()Z
 
-    .line 78
+    .line 72
     :cond_1c
     return-object v0
 .end method
@@ -83,7 +83,7 @@
     .param p1, "_swich"    # Ljava/lang/String;
 
     .prologue
-    .line 90
+    .line 84
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     if-eqz p1, :cond_c
 
@@ -112,11 +112,11 @@
     .registers 1
 
     .prologue
-    .line 86
+    .line 80
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     invoke-static {}, Lme/pqpo/librarylog4a/Log4a;->flush()V
 
-    .line 87
+    .line 81
     return-void
 .end method
 
@@ -131,38 +131,42 @@
 
     .line 33
     .local v3, "level":I
-    new-instance v9, Lbangcle/log/DataCache$1;
+    new-instance v9, Lbangcle/log/CustomInterceptor;
 
-    invoke-direct {v9, p0}, Lbangcle/log/DataCache$1;-><init>(Lbangcle/log/DataCache;)V
+    invoke-direct {v9}, Lbangcle/log/CustomInterceptor;-><init>()V
 
-    .line 40
+    .line 34
     .local v9, "wrapInterceptor":Lme/pqpo/librarylog4a/interceptor/Interceptor;
     new-instance v10, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
     invoke-direct {v10}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;-><init>()V
 
-    .line 41
+    .line 35
     invoke-virtual {v10, v3}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
     move-result-object v10
 
-    .line 42
-    invoke-virtual {v10, v9}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
+    new-instance v11, Lbangcle/log/CustomInterceptor;
+
+    invoke-direct {v11}, Lbangcle/log/CustomInterceptor;-><init>()V
+
+    .line 36
+    invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;
 
     move-result-object v10
 
-    .line 43
+    .line 37
     invoke-virtual {v10}, Lme/pqpo/librarylog4a/appender/AndroidAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/AndroidAppender;
 
     move-result-object v0
 
-    .line 45
+    .line 39
     .local v0, "androidAppender":Lme/pqpo/librarylog4a/appender/AndroidAppender;
     invoke-direct {p0, p1}, Lbangcle/log/DataCache;->getLogDir(Landroid/content/Context;)Ljava/io/File;
 
     move-result-object v4
 
-    .line 46
+    .line 40
     .local v4, "log":Ljava/io/File;
     new-instance v10, Ljava/lang/StringBuilder;
 
@@ -192,7 +196,7 @@
 
     move-result-object v1
 
-    .line 47
+    .line 41
     .local v1, "buffer_path":Ljava/lang/String;
     new-instance v10, Ljava/text/SimpleDateFormat;
 
@@ -212,7 +216,7 @@
 
     move-result-object v8
 
-    .line 48
+    .line 42
     .local v8, "time":Ljava/lang/String;
     new-instance v10, Ljava/lang/StringBuilder;
 
@@ -246,28 +250,28 @@
 
     move-result-object v5
 
-    .line 49
+    .line 43
     .local v5, "log_path":Ljava/lang/String;
     new-instance v10, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     invoke-direct {v10, p1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;-><init>(Landroid/content/Context;)V
 
-    .line 50
+    .line 44
     invoke-virtual {v10, v5}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLogFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
-    .line 51
+    .line 45
     invoke-virtual {v10, v3}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setLevel(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
-    .line 52
+    .line 46
     invoke-virtual {v10, v9}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->addInterceptor(Lme/pqpo/librarylog4a/interceptor/Interceptor;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
-    .line 53
+    .line 47
     invoke-virtual {v10, v1}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferFilePath(Ljava/lang/String;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
@@ -276,37 +280,37 @@
 
     invoke-direct {v11}, Lme/pqpo/librarylog4a/formatter/DateFileFormatter;-><init>()V
 
-    .line 54
+    .line 48
     invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setFormatter(Lme/pqpo/librarylog4a/formatter/Formatter;)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
     const/4 v11, 0x0
 
-    .line 55
+    .line 49
     invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setCompress(Z)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
     const v11, 0x7d000
 
-    .line 56
+    .line 50
     invoke-virtual {v10, v11}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->setBufferSize(I)Lme/pqpo/librarylog4a/appender/FileAppender$Builder;
 
     move-result-object v10
 
-    .line 57
+    .line 51
     invoke-virtual {v10}, Lme/pqpo/librarylog4a/appender/FileAppender$Builder;->create()Lme/pqpo/librarylog4a/appender/FileAppender;
 
     move-result-object v2
 
-    .line 59
+    .line 53
     .local v2, "fileAppender":Lme/pqpo/librarylog4a/appender/FileAppender;
     new-instance v7, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
 
     invoke-direct {v7}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;-><init>()V
 
-    .line 60
+    .line 54
     .local v7, "loggerBuild":Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
     sget-object v10, Lbangcle/log/DataStatistics;->LOG_PRINT:Ljava/lang/String;
 
@@ -314,35 +318,35 @@
 
     move-result v10
 
-    if-eqz v10, :cond_ab
+    if-eqz v10, :cond_b0
 
-    .line 61
+    .line 55
     invoke-virtual {v7, v0}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->addAppender(Lme/pqpo/librarylog4a/appender/Appender;)Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
 
-    .line 63
-    :cond_ab
+    .line 57
+    :cond_b0
     sget-object v10, Lbangcle/log/DataStatistics;->LOG_FILE:Ljava/lang/String;
 
     invoke-direct {p0, v10}, Lbangcle/log/DataCache;->swich(Ljava/lang/String;)Z
 
     move-result v10
 
-    if-eqz v10, :cond_b6
+    if-eqz v10, :cond_bb
 
-    .line 64
+    .line 58
     invoke-virtual {v7, v2}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->addAppender(Lme/pqpo/librarylog4a/appender/Appender;)Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;
 
-    .line 66
-    :cond_b6
+    .line 60
+    :cond_bb
     invoke-virtual {v7}, Lme/pqpo/librarylog4a/logger/AppenderLogger$Builder;->create()Lme/pqpo/librarylog4a/logger/AppenderLogger;
 
     move-result-object v6
 
-    .line 67
+    .line 61
     .local v6, "logger":Lme/pqpo/librarylog4a/logger/AppenderLogger;
     invoke-static {v6}, Lme/pqpo/librarylog4a/Log4a;->setLogger(Lme/pqpo/librarylog4a/logger/Logger;)V
 
-    .line 68
+    .line 62
     return-void
 .end method
 
@@ -355,7 +359,7 @@
     .end annotation
 
     .prologue
-    .line 82
+    .line 76
     .local p0, "this":Lbangcle/log/DataCache;, "Lbangcle/log/DataCache<TT;>;"
     .local p1, "t":Ljava/lang/Object;, "TT;"
     const-string v0, ""
@@ -366,6 +370,6 @@
 
     invoke-static {v0, v1}, Lme/pqpo/librarylog4a/Log4a;->w(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 83
+    .line 77
     return-void
 .end method

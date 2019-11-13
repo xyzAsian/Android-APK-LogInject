@@ -49,6 +49,7 @@ class Packer(object):
         self.inApk = inApk
         self.workspace = workspace
         self.config = config
+        self.log4aDir = self.currentDir+"/tools/log4a/"
         execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
         self.parse_axml()
         self.initConfig(self.config)
@@ -76,7 +77,10 @@ class Packer(object):
         config['data_statistics']['filter'].append('com/google')
         config['data_statistics']['filter'].append('com/android')
         config['data_statistics']['filter'].append('com/alipay')
+        config['data_statistics']['filter'].append('com/alibaba')
+        config['data_statistics']['filter'].append('com/taobao')
         config['data_statistics']['filter'].append('okio')
+        config['data_statistics']['filter'].append('rx')
         config['data_statistics']['filter'].append('android/support')
         config['data_statistics']['filter'].append('com/facebook')
         config['data_statistics']['filter'].append('com/amap')
@@ -86,7 +90,8 @@ class Packer(object):
         config['data_statistics']['filter'].append('io/reactivex')
         config['data_statistics']['filter'].append('com/tencent/')
         config['data_statistics']['filter'].append('org/apache/')
-        config['data_statistics']['filter'].append('com/bangcle/data/statistics')
+        config['data_statistics']['filter'].append('bangcle/')
+        config['data_statistics']['filter'].append('me/')
 
         if config['data_statistics']['func_filter']:
             for item in config['data_statistics']['func_filter']:
@@ -95,7 +100,6 @@ class Packer(object):
                 else :
                     config['data_statistics']['func'].append(item)
                 pass
-        print json.dumps(config,indent=4,sort_keys=True)
 
     def doUnzip(self) :
         self.outApk = 'target_{0}'.format(self.inApk)
@@ -137,7 +141,9 @@ class Packer(object):
                     self.doLogSetting(dexFileFullDir)
                     newSuperClass = self.manifest.get('android:name',None)
                     if newSuperClass:
-                        execute_cmd("sed -i 's/REAL_APP/%s/g' %s/bangcle/app/BangcleLogApplication.smali"%(newSuperClass[1:-1], dexFileFullDir))
+                        newSuperClass = newSuperClass.replace('.','/')
+                        execute_cmd(("sed -i 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
+                        execute_cmd(("sed -i 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
                 '''
                 如果smali转dex失败，则move_smali
                 '''
@@ -149,23 +155,6 @@ class Packer(object):
         filess.sort(cmp=lambda x,y:compare(x,y),reverse=True)
         execute_cmd('rm -f %s'%(filess[0]))
         self.smaliToDex(self.dexDir+'/'+filess[0][:-4], self.outDir+'/'+filess[0])
-
-    def filterSuperApplication(self, childApplication):
-        if childApplication:
-            if childApplication.startswith("Landroid/") or childApplication.startswith("Ljava/lang/Object"):
-                return
-            with open("%s/temp/application_filter.txt"%self.workspace,"a+") as filterFile:
-                filterFile.write(childApplication)
-                filterFile.write("\n")
-                filterFile.close()
-
-            with open("%s/classes/%s.smali"%(self.dexDir,childApplication[1:-1]),"r+") as file :
-                for line in file:
-                    if line.startswith(".super"):
-                        superApplication = line[line.rfind(' ')+1:].strip()
-                        self.filterSuperApplication(superApplication)
-                    pass
-
 
     def doZip(self):
         execute_cmd('cd {0}/out;zip -r target_{1} classes*.dex;cd -'.format(self.workspace,self.inApk))
@@ -215,10 +204,7 @@ class Packer(object):
         print "开始移动 "+srcDexFile
         #execute_cmd('mkdir -p %s'%(srcDexFile[:-4]))
         desDexDirFirst = "%s/classes%d"%(self.dexDir,desDexDirIndex)
-        if srcDexFile.endswith("classes.dex"):
-            execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3} -f {4}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size, "Landroid/support/multidex"), log = True)
-        else :
-            execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
+        execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
         self.smaliToDex(srcDexFile[:-4], self.outDir + srcDexFile.replace(self.dexDir,''))
         for x in xrange(0,split_size -1):
             desDexDir = "%s/classes%d"%(self.dexDir, desDexDirIndex + x)
@@ -239,7 +225,7 @@ class Packer(object):
                         class_name = line[line.rfind(' ')+1:].strip()
                         buf += line
 
-                    elif line.startswith('.method') and ' abstract ' not in line and ' native ' not in line:
+                    elif line.startswith('.method') and ' abstract ' not in line and ' native ' not in line and ' attachBaseContext(' not in line :
                         if ' constructor ' in line :
                             buf += line
                         else :
@@ -343,7 +329,6 @@ class Packer(object):
         return count
 
     def doAddLog4a(self) :
-        self.log4aDir = self.currentDir+"/tools/log4a/"
         #add /tool/log4a/log4a.dex
         dexess = [os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')]
         newClassName = "classes{0}.dex".format(str(len(dexess)+1))
@@ -365,7 +350,8 @@ class Packer(object):
         execute_cmd("cd %s;zip -r %s lib/;cd -"%(self.outDir,self.outApk))
         #modify Application to init log4a
         execute_cmd('unzip -qo -P aaa %s AndroidManifest.xml -d %s/temp'%(self.inApk,self.workspace))
-        execute_cmd('java -jar %s/axml_debug.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml bangcle.app.BangcleLogApplication'%(self.toolsDir,self.workspace,self.outDir))
+        execute_cmd('java -jar %s/axml-minsdk.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml bangcle.app.BangcleLogApplication 21'%(self.toolsDir,self.workspace,self.outDir))
+        # execute_cmd('java -jar %s/axml_debug.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml bangcle.app.BangcleLogApplication'%(self.toolsDir,self.workspace,self.outDir))
         execute_cmd("cd %s;zip -r %s AndroidManifest.xml;cd -"%(self.outDir,self.outApk))
 
     def parse_axml(self):
@@ -411,6 +397,8 @@ class Packer(object):
         self.doInject()
         self.doAddLog4a()
         self.doZip()
+        print json.dumps(self.config,indent=4,sort_keys=True)
+        print "此工具不支持Android4.x以下手机，会自动修改最低支持版本为Android5.0，如果出现在Android4.x手机不能安装属于正常现象"
 
 
 if __name__ == "__main__":
