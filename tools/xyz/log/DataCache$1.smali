@@ -1,4 +1,4 @@
-.class Lbangcle/log/DataCache$1;
+.class Lxyz/log/DataCache$1;
 .super Ljava/lang/Object;
 .source "DataCache.java"
 
@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lbangcle/log/DataCache;->init(Landroid/content/Context;)V
+    value = Lxyz/log/DataCache;->init(Landroid/content/Context;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,18 +18,18 @@
 
 
 # instance fields
-.field final synthetic this$0:Lbangcle/log/DataCache;
+.field final synthetic this$0:Lxyz/log/DataCache;
 
 
 # direct methods
-.method constructor <init>(Lbangcle/log/DataCache;)V
+.method constructor <init>(Lxyz/log/DataCache;)V
     .registers 2
-    .param p1, "this$0"    # Lbangcle/log/DataCache;
+    .param p1, "this$0"    # Lxyz/log/DataCache;
 
     .prologue
     .line 33
-    .local p0, "this":Lbangcle/log/DataCache$1;, "Lbangcle/log/DataCache$1;"
-    iput-object p1, p0, Lbangcle/log/DataCache$1;->this$0:Lbangcle/log/DataCache;
+    .local p0, "this":Lxyz/log/DataCache$1;, "Lxyz/log/DataCache$1;"
+    iput-object p1, p0, Lxyz/log/DataCache$1;->this$0:Lxyz/log/DataCache;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,12 +44,12 @@
 
     .prologue
     .line 36
-    .local p0, "this":Lbangcle/log/DataCache$1;, "Lbangcle/log/DataCache$1;"
+    .local p0, "this":Lxyz/log/DataCache$1;, "Lxyz/log/DataCache$1;"
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    const-string v1, " Bangcle "
+    const-string v1, " xyz "
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 

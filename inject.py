@@ -7,12 +7,7 @@ import msgpack
 import hashlib
 import json
 
-BASIC = ('Z','B','S','C','I','J','F','D')
-BASIC_NO_JD = ('Z','B','S','C','I','F')
-# V=void Z=boolean B=byte S=short C=char I=int J=long F=float D=double
-END = ('Z','B','S','C','I','J','F','D',';')
-START = ('Z','B','S','C','I','J','F','D','L','[')
-JD = ('J','D')
+from method import *
 
 def execute_cmd(cmd,log=True,allow_fail=False):
     a, b = commands.getstatusoutput(cmd)
@@ -42,27 +37,17 @@ def compare(x,y):
 
 class Packer(object):
     """docstring for Packer"""
-    def __init__(self, currentDir, toolsDir, inApk, workspace, config):
+    def __init__(self, currentDir, toolsDir, inApk, workspace, config, isTest = False):
         #
         self.currentDir = currentDir
         self.toolsDir = toolsDir
         self.inApk = inApk
         self.workspace = workspace
         self.config = config
-        self.log4aDir = self.currentDir+"/tools/log4a/"
-        execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
-        self.parse_axml()
-        self.initConfig(self.config)
-        self.METHOD_IN = '''
-    const-string v0, "%s"
-    const-string v1, "%s"
-    invoke-static {v0, v1}, Lbangcle/log/DataStatistics;->methodIn(Ljava/lang/String;Ljava/lang/String;)V
-'''
-        self.METHOD_OUT = '''
-    const-string v0, "%s"
-    const-string v1, "%s"
-    invoke-static {v0, v1}, Lbangcle/log/DataStatistics;->methodOut(Ljava/lang/String;Ljava/lang/String;)V
-'''
+        if not isTest:
+            execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
+            self.parse_axml()
+            self.initConfig(self.config)
 
     def initConfig(self,config):
         if not config :
@@ -90,8 +75,6 @@ class Packer(object):
         config['data_statistics']['filter'].append('io/reactivex')
         config['data_statistics']['filter'].append('com/tencent/')
         config['data_statistics']['filter'].append('org/apache/')
-        config['data_statistics']['filter'].append('bangcle/')
-        config['data_statistics']['filter'].append('me/')
 
         if config['data_statistics']['func_filter']:
             for item in config['data_statistics']['func_filter']:
@@ -134,16 +117,16 @@ class Packer(object):
                 print 'finish inject %s'%dexFileFullPath
                 # 将壳Application加入到classes.dex
                 if dexFileFullPath.endswith('classes.dex') :
-                    if not os.path.exists("%s/bangcle/"%dexFileFullDir):
-                        execute_cmd("mkdir -p %s/bangcle/"%dexFileFullDir)
-                    execute_cmd('cp -rf %s/../bangcle/ %s/'%(self.toolsDir, dexFileFullDir))
-                    #execute_cmd('cp -rf %s/../bangcle/log/ %s/bangcle/'%(self.toolsDir, dexFileFullDir))
-                    self.doLogSetting(dexFileFullDir)
+                    if not os.path.exists("%s/xyz/"%dexFileFullDir):
+                        execute_cmd("mkdir -p %s/xyz/"%dexFileFullDir)
+                    execute_cmd('cp -rf %s/../xyz/ %s/'%(self.toolsDir, dexFileFullDir))
+                    #execute_cmd('cp -rf %s/../xyz/log/ %s/xyz/'%(self.toolsDir, dexFileFullDir))
+                    # self.doLogSetting(dexFileFullDir)
                     newSuperClass = self.manifest.get('android:name',None)
                     if newSuperClass:
                         newSuperClass = newSuperClass.replace('.','/')
-                        execute_cmd(("sed -i 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
-                        execute_cmd(("sed -i 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/bangcle/app/BangcleLogApplication.smali") % (dexFileFullDir))
+                        execute_cmd(("sed -i 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/xyz/app/XyzLogApplication.smali") % (dexFileFullDir))
+                        execute_cmd(("sed -i 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/xyz/app/XyzLogApplication.smali") % (dexFileFullDir))
                 '''
                 如果smali转dex失败，则move_smali
                 '''
@@ -159,7 +142,7 @@ class Packer(object):
     def doZip(self):
         execute_cmd('cd {0}/out;zip -r target_{1} classes*.dex;cd -'.format(self.workspace,self.inApk))
         #删除原有签名
-        execute_cmd('zip -d {0}/out/{1} META-INF/*.MF META-INF/*.SF META-INF/*.RSA '.format(self.workspace,self.outApk))
+        execute_cmd('zip -d {0}/out/{1} META-INF/*.MF META-INF/*.SF META-INF/*.RSA '.format(self.workspace,self.outApk), allow_fail=True)
         #重新签名
         execute_cmd('{0}/apksigner sign --ks {0}/../debug.jks --ks-key-alias debugkey --ks-pass pass:qwe123 --key-pass pass:qwe123 --out {1}/out/{2}_signed.apk {1}/out/{2}.apk'.format(self.toolsDir,self.workspace,self.outApk[:-4]))
 
@@ -219,139 +202,60 @@ class Packer(object):
                 buf = ''
                 class_name = ''
                 prefix = hashlib.md5(absfilepath.replace(fileDir,'').encode(encoding='UTF-8')).hexdigest()
+                currMeth = None
                 for line in file :
 
                     if line.startswith('.class') :
                         class_name = line[line.rfind(' ')+1:].strip()
                         buf += line
 
-                    elif line.startswith('.method') and ' abstract ' not in line and ' native ' not in line and ' attachBaseContext(' not in line :
-                        if ' constructor ' in line :
-                            buf += line
-                        else :
-                            method_name = line[line.rfind(' ')+1:].strip()
-
-                            params = method_name[method_name.find('(')+1:method_name.rfind(')')]
-                            size = self.parseRegistersCount(params.strip())
-                            # 复制原始的方法
-                            buf += line
-                            buf += '    .registers '+str(size+4)+'\n\n'
-                            buf += self.METHOD_IN%(class_name,method_name)
-                            buf += '\n'
-                            _invoke = ''
-                            _param = ''
-                            _start = 0
-                            _range = ''
-                            if size >= 5:
-                                _range = '/range'
-
-                            if ' static ' in line :
-                                _invoke = '    invoke-static%s '%_range
-                            else:
-                                if ' private ' in line :
-                                    _invoke = '    invoke-direct%s '%_range
-                                else :
-                                    _invoke = '    invoke-virtual%s '%_range
-                                _param = 'p0'
-                                _start = 1
-                                size += 1
-                                if _start < size :
-                                    _param += ','
-
-                            if size < 5+_start:
-                                for x in xrange(_start,size):
-                                    _param += ('p'+str(x))
-                                    if x < size-1:
-                                        _param += ','
-                                    pass
-                            else :
-                                _param = 'p0 .. p'+str(size-1)
-                            buf += (_invoke+'{'+_param+'}, '+class_name+"->_"+prefix+"_"+method_name+'\n')
-
-                            if line.strip().endswith(')V') :
-                                buf += ('    '+(self.METHOD_OUT%(class_name,method_name)))
-                                buf += '\n    return-void'
-                            else :
-                                no_basic = line.strip()
-                                for c in BASIC:
-                                    no_basic = no_basic.replace(c,'')
-                                    pass
-                                if line.strip().endswith(BASIC_NO_JD) and not no_basic.endswith('['):
-                                    buf += '\n    move-result v2\n\n'
-                                elif line.strip().endswith(JD) and not no_basic.endswith('['):
-                                    buf += '\n    move-result-wide v2\n\n'
-                                else :
-                                    buf += '\n    move-result-object v2\n\n'
-                                buf += ('    '+(self.METHOD_OUT%(class_name,method_name)))
-                                if line.strip().endswith(BASIC_NO_JD) and not no_basic.endswith('['):
-                                    buf += '\n\n    return v2'
-                                elif line.strip().endswith(JD) and not no_basic.endswith('['):
-                                    buf += '\n    return-wide v2\n\n'
-                                else:
-                                    buf += '\n\n    return-object v2'
-                            buf += '\n.end method\n\n'
-                            buf += line.replace(method_name,'_'+prefix+'_'+method_name)
+                    elif line.startswith('.method') and ' abstract ' not in line and ' native ' not in line and ' attachBaseContext(' not in line and ' constructor ' not in line:
+                            currMeth = Method(class_name, line, prefix)
+                            buf += line.replace(currMeth.methodName,'_'+prefix+'_'+currMeth.methodName)
                     else :
                         buf += line
+                        if currMeth and line.strip() and line.strip().startswith('.param ') and (len(line[:line.find(".")])==4):
+                            currMeth.inParam = True
+                            currMeth.paramBuf += line
+                            continue
+                        elif currMeth and line.strip() and currMeth.inParam :
+                            #如果开头空格大于4个
+                            if line.startswith('        '):
+                                currMeth.paramBuf += line
+                                continue
+                            else:
+                                currMeth.inParam = False
+                            if line.strip().startswith('.end param'):
+                                currMeth.paramBuf += line
+                                continue
+
+                        if currMeth and line.strip() and not currMeth.inParam and line.strip().startswith('.annotation ') and (len(line[:line.find(".")])==4):
+                            currMeth.inAnnotation = True
+                            currMeth.annotationBuf += line
+                            continue
+                        elif currMeth and line.strip() and not currMeth.inParam and currMeth.inAnnotation :
+                            #如果开头空格大于4个
+                            if line.startswith('        '):
+                                currMeth.annotationBuf += line
+                                continue
+                            else:
+                                currMeth.inAnnotation = False
+                            if line.strip().startswith('.end annotation'):
+                                currMeth.annotationBuf += line
+                                continue
+
+                        if currMeth and line.strip() and line.strip().startswith('.end method'):
+                            buf += currMeth.totalBuf()
+                            currMeth = None
 
                 file.seek(0)
                 file.write(buf)
 
-    def parseRegistersCount(self,params):
-        count = 0
-        if not params:
-            return count
-        _length = len(params.strip())
-        new_index = 0
-        for index in xrange(0,_length):
-            if new_index >= _length:
-                break
-            if params[new_index].startswith(START):
-                if params[new_index] == 'L':
-                    new_index = params.strip().find(';',new_index,_length)
-                    count += 1
-                elif params[new_index] == '[':
-                    if params[new_index+1] == 'L':
-                        new_index = params.strip().find(';',new_index,_length)
-                        count += 1
-                    else:
-                        for xx in xrange(new_index+1,_length):
-                            if params[xx].startswith(BASIC):
-                                new_index = xx
-                                count += 1
-                                break
-                else:
-                    count += 1
-                    if(params[new_index].startswith(JD)):
-                        count += 1
-            new_index+=1
-        pass
-        return count
-
-    def doAddLog4a(self) :
-        #add /tool/log4a/log4a.dex
-        dexess = [os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')]
-        newClassName = "classes{0}.dex".format(str(len(dexess)+1))
-        execute_cmd("cp -f %s/log4a.dex %s/%s"%(self.log4aDir,self.outDir,newClassName))
-        execute_cmd("cd %s;zip -r %s %s;cd -"%(self.outDir,self.outApk,newClassName))
-        #add /tool/log4a/lib/*.so
-        libs = ['armeabi','armeabi-v7a','arm64-v8a','x86','x86_64']
-        for lib in libs :
-            a,b = execute_cmd("zipinfo %s/%s lib/%s/*"%(self.outDir, self.outApk,lib), allow_fail = True)
-            if a == 0:
-                # 成功
-                if not os.path.exists("%s/lib/"%self.outDir):
-                    execute_cmd("mkdir -p %s/lib/"%self.outDir)
-                execute_cmd("cp -rf %s/lib/%s %s/lib/"%(self.log4aDir,lib,self.outDir))
-        if not os.path.exists("%s/lib"%self.outDir):
-            lib = 'armeabi-v7a'
-            execute_cmd("mkdir -p %s/lib/%s"%(self.outDir,lib))
-            execute_cmd("cp -rf %s/lib/%s %s/lib/"%(self.log4aDir,lib,self.outDir))
-        execute_cmd("cd %s;zip -r %s lib/;cd -"%(self.outDir,self.outApk))
-        #modify Application to init log4a
+    def doManifest(self) :
+        #modify Application
         execute_cmd('unzip -qo -P aaa %s AndroidManifest.xml -d %s/temp'%(self.inApk,self.workspace))
-        execute_cmd('java -jar %s/axml-minsdk.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml bangcle.app.BangcleLogApplication 21'%(self.toolsDir,self.workspace,self.outDir))
-        # execute_cmd('java -jar %s/axml_debug.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml bangcle.app.BangcleLogApplication'%(self.toolsDir,self.workspace,self.outDir))
+        execute_cmd('java -jar %s/axml-minsdk.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml xyz.app.XyzLogApplication 21'%(self.toolsDir,self.workspace,self.outDir))
+        # execute_cmd('java -jar %s/axml_debug.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml xyz.app.XyzLogApplication'%(self.toolsDir,self.workspace,self.outDir))
         execute_cmd("cd %s;zip -r %s AndroidManifest.xml;cd -"%(self.outDir,self.outApk))
 
     def parse_axml(self):
@@ -395,7 +299,7 @@ class Packer(object):
     def startInject(self):
         self.doUnzip()
         self.doInject()
-        self.doAddLog4a()
+        self.doManifest()
         self.doZip()
         print json.dumps(self.config,indent=4,sort_keys=True)
         print "此工具不支持Android4.x以下手机，会自动修改最低支持版本为Android5.0，如果出现在Android4.x手机不能安装属于正常现象"
@@ -409,6 +313,6 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3 :
         execfile(sys.argv[2])
     else :
-        config = {'data_statistics':{'func_filter':[]},'log':{'print':False,'file':True}}
+        config = {'data_statistics':{'func_filter':[]}}
     Packer(currentDir, toolsDir, inApk, workspace, config).startInject()
     pass
