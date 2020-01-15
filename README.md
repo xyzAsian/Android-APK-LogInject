@@ -1,5 +1,5 @@
 # Android-APK-LogInject
-Auto inject log to smali, at method begin and end
+Auto inject code to smali, at method begin and end
 
 此工具可以插入代码，在每个Java方法的开始和结束，用来记录函数执行次数以及平均执行时间。<br/>
 
