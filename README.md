@@ -4,12 +4,12 @@ Auto inject log to smali, at method begin and end
 此工具可以插入代码，在每个Java方法的开始和结束，用来记录函数执行次数以及平均执行时间。<br/>
 
 ## 输出数据格式 json：
-{
-    'className':'com.test.Test', // 类名
-    'methodName':'test',         // 方法名
-    'parameterLength':0,         // 参数长度
-    'duration':12,               // 平均执行时间
-    'numberOfTimes':22           // 执行次数
+{<br/>
+    'className':'com.test.Test', // 类名<br/>
+    'methodName':'test',         // 方法名<br/>
+    'parameterLength':0,         // 参数长度<br/>
+    'duration':12,               // 平均执行时间<br/>
+    'numberOfTimes':22           // 执行次数<br/>
 }
 
 ## 环境：
