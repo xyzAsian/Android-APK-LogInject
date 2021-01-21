@@ -25,13 +25,13 @@ class Method(object):
     const-string v0, "%s"
     const-string v1, "%s"
     const/16 v2, %#x
-    invoke-static {v0, v1, v2}, Lbangcle/log/DataStatistics;->methodIn(Ljava/lang/String;Ljava/lang/String;I)V
+    invoke-static {v0, v1, v2}, Lxyz/log/DataStatistics;->methodIn(Ljava/lang/String;Ljava/lang/String;I)V
 '''
         self.METHOD_OUT = '''
     const-string v0, "%s"
     const-string v1, "%s"
     const/16 v2, %#x
-    invoke-static {v0, v1, v2}, Lbangcle/log/DataStatistics;->methodOut(Ljava/lang/String;Ljava/lang/String;I)V
+    invoke-static {v0, v1, v2}, Lxyz/log/DataStatistics;->methodOut(Ljava/lang/String;Ljava/lang/String;I)V
 '''
 
 
