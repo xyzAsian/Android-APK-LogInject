@@ -13,7 +13,7 @@ Auto inject code to smali, at method begin and end
 }
 
 ## 环境：
-linux + python2.7 (目前只支持linux环境)
+Ubuntu Linux/MacOS + python3 (目前只支持linux环境)
 
 ## 使用方法:
 **python inject.py xx.apk config.conf**

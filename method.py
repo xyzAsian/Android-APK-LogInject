@@ -25,13 +25,13 @@ class Method(object):
     const-string v0, "%s"
     const-string v1, "%s"
     const/16 v2, %#x
-    invoke-static {v0, v1, v2}, Lbangcle/log/DataStatistics;->methodIn(Ljava/lang/String;Ljava/lang/String;I)V
+    invoke-static {v0, v1, v2}, Lxyz/log/DataStatistics;->methodIn(Ljava/lang/String;Ljava/lang/String;I)V
 '''
         self.METHOD_OUT = '''
     const-string v0, "%s"
     const-string v1, "%s"
     const/16 v2, %#x
-    invoke-static {v0, v1, v2}, Lbangcle/log/DataStatistics;->methodOut(Ljava/lang/String;Ljava/lang/String;I)V
+    invoke-static {v0, v1, v2}, Lxyz/log/DataStatistics;->methodOut(Ljava/lang/String;Ljava/lang/String;I)V
 '''
 
 
@@ -41,7 +41,7 @@ class Method(object):
             return count
         _length = len(params.strip())
         new_index = 0
-        for index in xrange(0,_length):
+        for index in range(0,_length):
             if new_index >= _length:
                 break
             if params[new_index].startswith(START):
@@ -53,7 +53,7 @@ class Method(object):
                         new_index = params.strip().find(';',new_index,_length)
                         count += 1
                     else:
-                        for xx in xrange(new_index+1,_length):
+                        for xx in range(new_index+1,_length):
                             if params[xx].startswith(BASIC):
                                 new_index = xx
                                 count += 1
@@ -102,7 +102,7 @@ class Method(object):
                 _param += ','
 
         if size < 5+_start:
-            for x in xrange(_start,size):
+            for x in range(_start,size):
                 _param += ('p'+str(x))
                 if x < size-1:
                     _param += ','

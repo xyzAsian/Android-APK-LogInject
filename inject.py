@@ -2,22 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
-import commands
+import subprocess
 import msgpack
+import zipfile
 import hashlib
 import json
+import shutil
+from tools.Tool import *
 
 from method import *
-
-def execute_cmd(cmd,log=True,allow_fail=False):
-    a, b = commands.getstatusoutput(cmd)
-    print a, b
-    if log:
-        print 'excute %d:%s'%(a,cmd)
-    if a!=0 and not allow_fail:
-        print '\n  ***  execute fail:%d,%s,%s\n' % (a,cmd,b)
-        raise Exception('\n  ***  execute fail:%d,%s,%s\n' % (a,cmd,b));
-    return a,b
+from functools import cmp_to_key
 
 def compare(x,y):
     if not x.endswith('.dex') and not y.endswith('.dex'):
@@ -37,15 +31,18 @@ def compare(x,y):
 
 class Packer(object):
     """docstring for Packer"""
-    def __init__(self, currentDir, toolsDir, inApk, workspace, config, isTest = False):
+    def __init__(self, currentDir, inApk, workspace, config, isTest = False):
         #
         self.currentDir = currentDir
-        self.toolsDir = toolsDir
         self.inApk = inApk
         self.workspace = workspace
         self.config = config
+        self.mac_mach = "''" if PLATFORM=="macos" else ""
         if not isTest:
-            execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
+            #execute_cmd('rm -rf {0};mkdir -p {0}'.format(self.workspace))
+            if os.path.exists(self.workspace):
+                shutil.rmtree(self.workspace)
+            os.makedirs(self.workspace)
             self.parse_axml()
             self.initConfig(self.config)
 
@@ -59,6 +56,7 @@ class Packer(object):
         #存放不需要打桩的类
         config['data_statistics'].setdefault('filter',[])
         #默认三方库不打桩
+        '''
         config['data_statistics']['filter'].append('com/google')
         config['data_statistics']['filter'].append('com/android')
         config['data_statistics']['filter'].append('com/alipay')
@@ -75,6 +73,7 @@ class Packer(object):
         config['data_statistics']['filter'].append('io/reactivex')
         config['data_statistics']['filter'].append('com/tencent/')
         config['data_statistics']['filter'].append('org/apache/')
+        '''
 
         if config['data_statistics']['func_filter']:
             for item in config['data_statistics']['func_filter']:
@@ -95,18 +94,30 @@ class Packer(object):
         if not self.config.get('log',None):
             self.config.setdefault('log',{'print':False,'file':True})
         if self.config['log'].get('print',False):
-            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i '0,/LOGPRINT/s/LOGPRINT/{1}/g'".format(smali_file_dir,"LOGPRINT_TRUE"))
+            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i {1} '0,/LOGPRINT/s/LOGPRINT/{2}/g'".format(smali_file_dir, self.mac_mach, "LOGPRINT_TRUE"))
         if self.config['log'].get('file',False):
-            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i '0,/LOGFILE/s/LOGFILE/{1}/g'".format(smali_file_dir,"LOGFILE_TRUE"))
+            execute_cmd("find {0} -name DataStatistics.smali|xargs sed -i {1} '0,/LOGFILE/s/LOGFILE/{2}/g'".format(smali_file_dir, self.mac_mach, "LOGFILE_TRUE"))
+
+    def prepareDex(self):
+        isSplitAgain = False
+        dexess = [os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')]
+        for dexFileFullPath in dexess:
+            methodCount = self.methodIdCount(dexFileFullPath)
+            if methodCount > 30000:
+                isSplitAgain = True
+                self.move_smali(dexFileFullPath, (len([os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')])+1), int(methodCount/2))
+        if isSplitAgain:
+            self.prepareDex()
 
     def doInject(self) :
         dexess = [os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')]
         #print dexess
         for dexFileFullPath in dexess:
+            print("========================= %s start ========================="%(os.path.basename(dexFileFullPath)))
             dexFileFullDir = dexFileFullPath[:-4]
             self.dexToSmali(dexFileFullPath, dexFileFullDir)
             if os.path.isdir(dexFileFullDir):
-                print 'start inject %s'%dexFileFullPath
+                print('start inject %s'%dexFileFullPath)
                 for parent,dirnames,filenames in os.walk(dexFileFullDir):
                     for filename in filenames:
                         filepath = os.path.join(parent, filename).replace(dexFileFullDir+'/', '')
@@ -114,37 +125,30 @@ class Packer(object):
                             #print filepath
                             self.inject(os.path.join(parent, filename), dexFileFullDir)
                         pass
-                print 'finish inject %s'%dexFileFullPath
+                print('finish inject %s'%dexFileFullPath)
                 # 将壳Application加入到classes.dex
                 if dexFileFullPath.endswith('classes.dex') :
-                    if not os.path.exists("%s/xyz/"%dexFileFullDir):
-                        execute_cmd("mkdir -p %s/xyz/"%dexFileFullDir)
-                    execute_cmd('cp -rf %s/../xyz/ %s/'%(self.toolsDir, dexFileFullDir))
+                    if not os.path.exists("%s/xyz"%dexFileFullDir):
+                        execute_cmd("mkdir -p %s/xyz"%dexFileFullDir)
+                    execute_cmd('cp -rf %s/xyz/* %s/xyz/'%(TOOL_DIR, dexFileFullDir))
                     #execute_cmd('cp -rf %s/../xyz/log/ %s/xyz/'%(self.toolsDir, dexFileFullDir))
                     # self.doLogSetting(dexFileFullDir)
                     newSuperClass = self.manifest.get('android:name',None)
                     if newSuperClass:
                         newSuperClass = newSuperClass.replace('.','/')
-                        execute_cmd(("sed -i 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/xyz/app/XyzLogApplication.smali") % (dexFileFullDir))
-                        execute_cmd(("sed -i 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/xyz/app/XyzLogApplication.smali") % (dexFileFullDir))
+                        execute_cmd(("sed -i %s 's#.super Landroid/app/Application;#.super L"+newSuperClass[1:-1]+";#g' %s/xyz/app/XyzLogApplication.smali") % (self.mac_mach, dexFileFullDir))
+                        execute_cmd(("sed -i %s 's#Landroid/app/Application;->#L"+newSuperClass[1:-1]+";->#g' %s/xyz/app/XyzLogApplication.smali") % (self.mac_mach, dexFileFullDir))
                 '''
                 如果smali转dex失败，则move_smali
                 '''
-                a,b = self.smaliToDex(dexFileFullDir,self.outDir+dexFileFullPath.replace(self.dexDir,''),allow_fail = True)
-                if a != 0:
-                    self.move_smali(dexFileFullPath,(len([os.path.join(self.dexDir, name) for name in os.listdir(self.dexDir) if name.endswith('.dex')])+1))
-        #self.re_arrange_dex('%s/%s'%(self.dexDir,'classes%d'%(len(dexess)+1)))
-        filess = os.listdir(self.outDir)
-        filess.sort(cmp=lambda x,y:compare(x,y),reverse=True)
-        execute_cmd('rm -f %s'%(filess[0]))
-        self.smaliToDex(self.dexDir+'/'+filess[0][:-4], self.outDir+'/'+filess[0])
+                self.smaliToDex(dexFileFullDir,self.outDir+dexFileFullPath.replace(self.dexDir,''),allow_fail = True)
 
     def doZip(self):
-        execute_cmd('cd {0}/out;zip -r target_{1} classes*.dex;cd -'.format(self.workspace,self.inApk))
+        execute_cmd('cd {0}/out && zip -r target_{1} classes*.dex;cd -'.format(self.workspace,self.inApk))
         #删除原有签名
         execute_cmd('zip -d {0}/out/{1} META-INF/*.MF META-INF/*.SF META-INF/*.RSA '.format(self.workspace,self.outApk), allow_fail=True)
         #重新签名
-        execute_cmd('{0}/apksigner sign --ks {0}/../debug.jks --ks-key-alias debugkey --ks-pass pass:qwe123 --key-pass pass:qwe123 --out {1}/out/{2}_signed.apk {1}/out/{2}.apk'.format(self.toolsDir,self.workspace,self.outApk[:-4]))
+        execute_cmd('{0} sign --ks {3} --ks-key-alias debugkey --ks-pass pass:qwe123 --key-pass pass:qwe123 --out {1}/out/{2}_signed.apk {1}/out/{2}.apk'.format(APK_SIGNER,self.workspace,self.outApk[:-4], JKS))
 
     #是否需要做
     def isNeedInject(self,filepath) :
@@ -167,34 +171,39 @@ class Packer(object):
         return False
 
     def methodIdCount(self,dexpath):
-        a,b = execute_cmd("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $13$12$11$10}'"%dexpath, log=False)
-        return int(b,16)
+        print("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $13$12$11$10}'"%dexpath)
+        methodsid = int(execute_cmd("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $13$12$11$10}'"%dexpath, log=False,      status=False), 16)
+        fieldsid =  int(execute_cmd("hexdump -n 100 -C %s | grep 00000050 | awk -F ' ' '{print $5$4$3$2}'"%dexpath, log=False,          status=False), 16)
+        stringids=  int(execute_cmd("hexdump -n 100 -C %s | grep 00000030 | awk -F ' ' '{print $13$12$11$10}'" % dexpath, log=False,    status=False), 16)
+        typeIds=    int(execute_cmd("hexdump -n 100 -C %s | grep 00000040 | awk -F ' ' '{print $5$4$3$2}'"%dexpath, log=False,          status=False), 16)
+        proto=      int(execute_cmd("hexdump -n 100 -C %s | grep 00000040 | awk -F ' ' '{print $13$12$11$10}'" % dexpath, log=False,    status=False), 16)
+        
+        LOG.info("%s methodIDs: %d fieldIDs: %d stringIDs: %d typeIDs: %d protoIDs: %d" % (os.path.basename(dexpath), methodsid, fieldsid, stringids, typeIds, proto))
+
+        maxcount=max(methodsid, fieldsid)
+        if(maxcount<65000):
+            if max(typeIds,proto)>65000:
+                raise Exception('\n  ***  execute fail (The number of DEX methodsid sringids, typeIds, proto exceeds 65000).%s,%d, %d,%d,%d\n'%(dexpath,methodsid,stringids, typeIds,proto));
+            
+        return maxcount
 
     def smaliToDex(self, smalidir, outdex_path, minSdk=9, delsmali=False, log=True, allow_fail=False):
         if delsmali:
-            return execute_cmd('java -jar %s/smali-2.2.7.jar a %s -o %s -a %s && rm -fr %s' % (self.toolsDir, smalidir, outdex_path, minSdk, smalidir), log,allow_fail)
+            return execute_cmd('%s a %s -o %s -a %s && rm -fr %s' % (SMALI, smalidir, outdex_path, minSdk, smalidir), log,allow_fail)
         else:
-            return execute_cmd('java -jar %s/smali-2.2.7.jar a %s -o %s -a %s' % (self.toolsDir, smalidir, outdex_path, minSdk), log,allow_fail)
+            return execute_cmd('%s a %s -o %s -a %s' % (SMALI, smalidir, outdex_path, minSdk), log,allow_fail)
 
     def dexToSmali(self, index_path, outdir, deldex=False, locals=False, log=True, allow_fail=False):
         uselocals = '-l' if locals else ''
         if deldex:
-            return execute_cmd('java -jar %s/baksmali-2.2.7.jar d %s %s -o %s && rm %s' % (self.toolsDir, uselocals, index_path, outdir, index_path), log,allow_fail)
+            return execute_cmd('%s d %s %s -o %s && rm %s' % (BAKSMALI, uselocals, index_path, outdir, index_path), log,allow_fail)
         else:
-            return execute_cmd('java -jar %s/baksmali-2.2.7.jar d %s %s -o %s' % (self.toolsDir, uselocals, index_path, outdir),log,allow_fail)
+            return execute_cmd('%s d %s %s -o %s' % (BAKSMALI, uselocals, index_path, outdir),log,allow_fail)
 
-    def move_smali(self,srcDexFile,desDexDirIndex,split_size = 3):
-        print "开始移动 "+srcDexFile
-        #execute_cmd('mkdir -p %s'%(srcDexFile[:-4]))
-        desDexDirFirst = "%s/classes%d"%(self.dexDir,desDexDirIndex)
-        execute_cmd('java -jar {0}/dex-split-2.0.jar -d {1} -o {2} -m {3}'.format(self.toolsDir,srcDexFile,desDexDirFirst,split_size), log = False)
-        self.smaliToDex(srcDexFile[:-4], self.outDir + srcDexFile.replace(self.dexDir,''))
-        for x in xrange(0,split_size -1):
-            desDexDir = "%s/classes%d"%(self.dexDir, desDexDirIndex + x)
-            self.smaliToDex(desDexDir, desDexDir+'.dex')
-            execute_cmd("cp -f %s.dex %s/classes%d.dex"%(desDexDir, self.outDir,desDexDirIndex + x))
-            pass
-        execute_cmd('cp -f %s %s'%(desDexDir+'.dex', self.outDir))
+    def move_smali(self, srcDexFile, desDexDirIndex, methodMovCount):
+        print("start move %s to %d"%(srcDexFile, desDexDirIndex))
+        desDexOut = "%s/classes%d.dex"%(self.dexDir,desDexDirIndex)
+        execute_cmd('{0} split-dex --input-dex "{1}" --out-dex "{2}" -ms {3}'.format(DEX_SPLIT, srcDexFile, desDexOut, methodMovCount), log = True)
 
     def inject(self,absfilepath, fileDir):
         if absfilepath.endswith('.smali'):
@@ -254,15 +263,18 @@ class Packer(object):
     def doManifest(self) :
         #modify Application
         execute_cmd('unzip -qo -P aaa %s AndroidManifest.xml -d %s/temp'%(self.inApk,self.workspace))
-        execute_cmd('java -jar %s/axml-minsdk.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml xyz.app.XyzLogApplication 21'%(self.toolsDir,self.workspace,self.outDir))
+        execute_cmd('%s %s/temp/AndroidManifest.xml %s/AndroidManifest.xml xyz.app.XyzLogApplication 21'%(AXML_MINSDK,self.workspace,self.outDir))
         # execute_cmd('java -jar %s/axml_debug.jar %s/temp/AndroidManifest.xml %s/AndroidManifest.xml xyz.app.XyzLogApplication'%(self.toolsDir,self.workspace,self.outDir))
         execute_cmd("cd %s;zip -r %s AndroidManifest.xml;cd -"%(self.outDir,self.outApk))
 
     def parse_axml(self):
-        execute_cmd('mkdir -p %s/temp/'%(self.workspace))
-        a,b = execute_cmd("%s/aapt d badging %s 2>/dev/null |grep 'package: name='" % (self.toolsDir,self.inApk))
+        #execute_cmd('mkdir -p %s/temp/'%(self.workspace))
+        os.makedirs("%s/temp/"%(self.workspace))
+        a,b = execute_cmd("%s d badging %s 2>/dev/null |grep 'package: name='" % (AAPT,self.inApk))
         self.pkgName = b.split("'")[1]
-        execute_cmd("%s/aapt d xmltree %s  AndroidManifest.xml|sed 's/([^)]*)//g'|sed 's/android:name=\"\./android:name=\"%s\./g'> %s/temp/manifest.txt" % (self.toolsDir,self.inApk,self.pkgName,self.workspace))
+        execute_cmd("%s d xmltree %s  AndroidManifest.xml > %s/temp/manifest.txt"%(AAPT, self.inApk, self.workspace))
+        execute_cmd("sed -i %s 's#([^)]*)##g' %s/temp/manifest.txt" % (self.mac_mach, self.workspace))
+        execute_cmd("sed -i %s 's#android:name=\".#android:name=\"%s.#g' %s/temp/manifest.txt"%(self.mac_mach, self.pkgName, self.workspace))
         nn = {}
         stack = [nn,nn]
         app = {}
@@ -285,11 +297,6 @@ class Packer(object):
         self.manifest = app
 
         #fix some ap has applicaton like as 'MyApp' or '.MyApp', not 'com.yimq.MyApp'
-
-        minSdkVersion = nn['manifest'][0]['uses-sdk'][0]['android:minSdkVersion']
-        global MINSDK
-        MINSDK = int(minSdkVersion, 16)
-
         application = self.manifest.get('android:name',None)
         if application:
             tk = application[1:-1].split('.')
@@ -298,21 +305,21 @@ class Packer(object):
 
     def startInject(self):
         self.doUnzip()
+        self.prepareDex();
         self.doInject()
         self.doManifest()
         self.doZip()
-        print json.dumps(self.config,indent=4,sort_keys=True)
-        print "此工具不支持Android4.x以下手机，会自动修改最低支持版本为Android5.0，如果出现在Android4.x手机不能安装属于正常现象"
+        print(json.dumps(self.config,indent=4,sort_keys=True))
+        print("Not support Android4.x device!")
 
 
 if __name__ == "__main__":
     currentDir = os.path.abspath('.')
-    toolsDir = currentDir + "/tools/linux"
     workspace = currentDir +"/workspace"
     inApk = sys.argv[1]
     if len(sys.argv) >= 3 :
-        execfile(sys.argv[2])
+        exec(open(sys.argv[2]).read())
     else :
         config = {'data_statistics':{'func_filter':[]}}
-    Packer(currentDir, toolsDir, inApk, workspace, config).startInject()
+    Packer(currentDir, inApk, workspace, config).startInject()
     pass
