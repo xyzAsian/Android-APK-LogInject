@@ -274,7 +274,7 @@ class Packer(object):
         self.pkgName = b.split("'")[1]
         execute_cmd("%s d xmltree %s  AndroidManifest.xml > %s/temp/manifest.txt"%(AAPT, self.inApk, self.workspace))
         execute_cmd("sed -i %s 's#([^)]*)##g' %s/temp/manifest.txt" % (self.mac_mach, self.workspace))
-        execute_cmd("sed -i %s 's#android:name=\".#android:name=\"%s.#g' %s/temp/manifest.txt"%(self.mac_mach, self.pkgName, self.workspace))
+        execute_cmd("sed -i %s 's#android:name=\"\.#android:name=\"%s\.#g' %s/temp/manifest.txt"%(self.mac_mach, self.pkgName, self.workspace))
         nn = {}
         stack = [nn,nn]
         app = {}
@@ -298,6 +298,7 @@ class Packer(object):
 
         #fix some ap has applicaton like as 'MyApp' or '.MyApp', not 'com.yimq.MyApp'
         application = self.manifest.get('android:name',None)
+        print("application:%s"%application)
         if application:
             tk = application[1:-1].split('.')
             if len(tk) == 1:
